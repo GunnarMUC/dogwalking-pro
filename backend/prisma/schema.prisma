@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   // ADMIN or OWNER
+  firstName String
+  lastName  String
+  phone     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  dogs              Dog[]
+  walksAsAdmin      Walk[]
+  invitationsCreated Invitation[]
+
+  @@map("users")
+}
+
+model Dog {
+  id               String   @id @default(uuid())
+  name             String
+  breed            String?
+  age              Int?
+  weight           Float?
+  ownerId          String
+  medicalNotes     String?
+  emergencyContact String?
+  photoUrl         String?
+  createdAt        DateTime @default(now())
+
+  // Relations
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+  rates       Rate[]
+
+  @@map("dogs")
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  token       String    @unique
+  createdById String
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
+}
+
+model Walk {
+  id        String    @id @default(uuid())
+  date      String    // ISO date string (YYYY-MM-DD)
+  startTime DateTime?
+  endTime   DateTime?
+  status    String    // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  adminId   String
+  notes     String?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  admin       User         @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+
+  @@map("walks")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  walkId    String
+  dogId     String
+  attended  Boolean  @default(false)
+  duration  Int?     // in minutes
+  createdAt DateTime @default(now())
+
+  // Relations
+  walk Walk @relation(fields: [walkId], references: [id], onDelete: Cascade)
+  dog  Dog  @relation(fields: [dogId], references: [id], onDelete: Cascade)
+
+  @@unique([walkId, dogId])
+  @@map("attendances")
+}
+
+model Rate {
+  id            String   @id @default(uuid())
+  dogId         String
+  hourlyRate    Float
+  effectiveFrom DateTime
+  createdAt     DateTime @default(now())
+
+  // Relations
+  dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
+
+  @@map("rates")
+}
+

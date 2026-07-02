@@ -83,8 +83,8 @@ shared/
 - Git
 
 ```bash
-git clone https://github.com/GunnarMUC/dogwalking-app-01.git
-cd dogwalking-app-01
+git clone https://github.com/GunnarMUC/dogwalking-pro.git
+cd dogwalking-pro
 
 npm install
 cd backend
@@ -176,7 +176,7 @@ npm run dev
 ## 📁 Projektstruktur
 
 ```
-dogwalking-app-01/
+dogwalking-pro/
 ├── frontend/                 # React PWA
 │   ├── src/
 │   │   ├── components/      # AdminLayout, OwnerLayout, ProtectedRoute

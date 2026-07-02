@@ -246,9 +246,9 @@ Apache License 2.0 — siehe [LICENSE](./LICENSE)
 | Service-Layer-Architektur | ✅ |
 | PWA (Offline-fähig) | ✅ |
 | Dashboard-Stats API | ✅ |
-| **Testing** | 📋 Geplant |
-| **Docker** | 📋 Geplant |
-| **PostgreSQL** | 📋 Geplant |
+| **Testing** | ✅ |
+| **Docker** | ✅ |
+| **PostgreSQL** | ✅ |
 | **Stripe Payments** | 📋 Geplant |
 
 ---

@@ -1,196 +1,67 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { prisma } from '../lib/prisma.js';
-import { generateToken } from '../lib/jwt.js';
+import { ZodError } from 'zod';
+import { authService } from '../services/auth.service.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import type { LoginRequest, RegisterRequest, AuthResponse } from '@dogwalking/shared';
+import { loginSchema, registerSchema } from '../schemas/auth.js';
 
 export const authRouter = Router();
 
-// Register (with invitation token)
 authRouter.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, phone, token } = req.body as RegisterRequest;
+    const data = registerSchema.parse(req.body);
+    const result = await authService.register(data);
 
-    // Validate invitation token
-    const invitation = await prisma.invitation.findUnique({
-      where: { token }
-    });
-
-    if (!invitation) {
-      return res.status(400).json({ error: 'Invalid invitation token' });
-    }
-
-    if (invitation.usedAt) {
-      return res.status(400).json({ error: 'Invitation token already used' });
-    }
-
-    if (new Date() > invitation.expiresAt) {
-      return res.status(400).json({ error: 'Invitation token expired' });
-    }
-
-    if (invitation.email !== email) {
-      return res.status(400).json({ error: 'Email does not match invitation' });
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-        role: 'OWNER'
-      }
-    });
-
-    // Mark invitation as used
-    await prisma.invitation.update({
-      where: { id: invitation.id },
-      data: { usedAt: new Date() }
-    });
-
-    // Generate JWT
-    const jwtToken = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    });
-
-    // Set cookie
-    res.cookie('token', jwtToken, {
+    res.cookie('token', result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    const response: AuthResponse = {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role as any,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone || undefined,
-        createdAt: user.createdAt
-      },
-      token: jwtToken
-    };
-
-    res.status(201).json(response);
-  } catch (error: any) {
-    console.error('Register error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(201).json({ user: result.user, token: result.token });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Registration failed' });
   }
 });
 
-// Login
 authRouter.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body as LoginRequest;
+    const data = loginSchema.parse(req.body);
+    const result = await authService.login(data);
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Check password
-    const validPassword = await bcrypt.compare(password, user.password);
-
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Generate JWT
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
-    });
-
-    // Set cookie
-    res.cookie('token', token, {
+    res.cookie('token', result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    const response: AuthResponse = {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role as any,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone || undefined,
-        createdAt: user.createdAt
-      },
-      token
-    };
-
-    res.json(response);
+    res.json({ user: result.user, token: result.token });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    }
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Login failed' });
   }
 });
 
-// Get current user
 authRouter.get('/me', authenticate, async (req: AuthRequest, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const response: AuthResponse = {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role as any,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone || undefined,
-        createdAt: user.createdAt
-      }
-    };
-
-    res.json(response);
+    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    const result = await authService.getCurrentUser(req.user.userId);
+    res.json(result);
   } catch (error) {
-    console.error('Get me error:', error);
-    res.status(500).json({ error: 'Failed to get user' });
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Failed to get user' });
   }
 });
 
-// Logout
-authRouter.post('/logout', (req, res) => {
+authRouter.post('/logout', (_req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
-

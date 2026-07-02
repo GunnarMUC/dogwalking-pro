@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { useNavigate, useLocation } from '@tanstack/react-router';
 import { useAuthStore } from '../store/authStore';
-import { Home, Dog, Calendar, Mail, DollarSign, Users, LogOut } from 'lucide-react';
+import { Home, Dog, Calendar, Mail, DollarSign, Users, UserPlus, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AdminLayoutProps {
@@ -29,6 +29,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { path: '/admin/walks', icon: Calendar, label: 'Walks' },
     { path: '/admin/invitations', icon: Mail, label: 'Einladungen' },
     { path: '/admin/billing', icon: DollarSign, label: 'Abrechnung' },
+    { path: '/admin/walkers', icon: UserPlus, label: 'Walker' },
     { path: '/admin/users', icon: Users, label: 'Besitzer' },
   ];
 

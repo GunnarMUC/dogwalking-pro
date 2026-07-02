@@ -20,10 +20,10 @@ model User {
   phone     String?
   createdAt DateTime @default(now())
 
-  // Relations
   dogs              Dog[]
   walksAsAdmin      Walk[]
   invitationsCreated Invitation[]
+  walkerProfile     WalkerProfile?
 
   @@map("users")
 }
@@ -40,10 +40,10 @@ model Dog {
   photoUrl         String?
   createdAt        DateTime @default(now())
 
-  // Relations
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   attendances Attendance[]
   rates       Rate[]
+  recurringPlans RecurringWalkPlan[]
 
   @@map("dogs")
 }
@@ -57,7 +57,6 @@ model Invitation {
   expiresAt   DateTime
   createdAt   DateTime  @default(now())
 
-  // Relations
   createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("invitations")
@@ -65,7 +64,7 @@ model Invitation {
 
 model Walk {
   id        String    @id @default(uuid())
-  date      String    // ISO date string (YYYY-MM-DD)
+  date      String
   startTime DateTime?
   endTime   DateTime?
   status    String    // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
@@ -73,7 +72,6 @@ model Walk {
   notes     String?
   createdAt DateTime  @default(now())
 
-  // Relations
   admin       User         @relation(fields: [adminId], references: [id], onDelete: Cascade)
   attendances Attendance[]
 
@@ -85,10 +83,9 @@ model Attendance {
   walkId    String
   dogId     String
   attended  Boolean  @default(false)
-  duration  Int?     // in minutes
+  duration  Int?
   createdAt DateTime @default(now())
 
-  // Relations
   walk Walk @relation(fields: [walkId], references: [id], onDelete: Cascade)
   dog  Dog  @relation(fields: [dogId], references: [id], onDelete: Cascade)
 
@@ -103,9 +100,45 @@ model Rate {
   effectiveFrom DateTime
   createdAt     DateTime @default(now())
 
-  // Relations
   dog Dog @relation(fields: [dogId], references: [id], onDelete: Cascade)
 
   @@map("rates")
 }
 
+model WalkerProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  bio             String
+  experienceYears Int      @default(0)
+  hourlyRate      Float    @default(25)
+  serviceAreas    String   // JSON array
+  availability    String?  // JSON array
+  isAvailable     Boolean  @default(true)
+  certifications  String?  // JSON array
+  averageRating   Float    @default(0)
+  totalWalks      Int      @default(0)
+  latitude        Float?
+  longitude       Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("walker_profiles")
+}
+
+model RecurringWalkPlan {
+  id        String   @id @default(uuid())
+  dogId     String
+  ownerId   String
+  dayOfWeek Int      // 0=Sunday, 1=Monday, ...
+  time      String   // HH:mm
+  duration  Int      // minutes
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  dog   Dog  @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("recurring_walk_plans")
+}

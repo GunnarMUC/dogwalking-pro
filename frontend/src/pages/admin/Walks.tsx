@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { api } from '../../lib/api';
-import { Calendar, Plus, Play, Square, X, CheckCircle, Circle } from 'lucide-react';
+import { Calendar, Plus, Play, Square, X, CheckCircle, Circle, Check, Ban } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import type { Walk, Dog, WalkStatus } from '@dogwalking/shared';
@@ -75,7 +75,27 @@ export function AdminWalks() {
     }
   };
 
-  const handleToggleAttendance = async (walkId: string, dogId: string, currentAttended: boolean) => {
+  const handleConfirmWalk = async (walk: Walk) => {
+    try {
+      await api.confirmWalk(walk.id);
+      toast.success('Walk bestätigt');
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Fehler beim Bestätigen');
+    }
+  };
+
+  const handleCancelWalk = async (walk: Walk) => {
+    if (!window.confirm('Walk wirklich absagen?')) return;
+    try {
+      await api.cancelWalk(walk.id);
+      toast.success('Walk abgesagt');
+      setSelectedWalk(null);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || 'Fehler beim Absagen');
+    }
+  };
     try {
       await api.updateAttendance(walkId, dogId, !currentAttended);
       loadData();
@@ -253,13 +273,29 @@ export function AdminWalks() {
                   </div>
                   <div className="flex space-x-2">
                     {selectedWalk.status === 'SCHEDULED' && (
-                      <button
-                        onClick={() => handleStartWalk(selectedWalk)}
-                        className="btn-success flex items-center space-x-2"
-                      >
-                        <Play className="w-4 h-4" />
-                        <span>Walk starten</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleConfirmWalk(selectedWalk)}
+                          className="btn-outline flex items-center space-x-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>Bestätigen</span>
+                        </button>
+                        <button
+                          onClick={() => handleStartWalk(selectedWalk)}
+                          className="btn-success flex items-center space-x-2"
+                        >
+                          <Play className="w-4 h-4" />
+                          <span>Walk starten</span>
+                        </button>
+                        <button
+                          onClick={() => handleCancelWalk(selectedWalk)}
+                          className="btn-outline flex items-center space-x-2 text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          <Ban className="w-4 h-4" />
+                          <span>Absagen</span>
+                        </button>
+                      </>
                     )}
                     {selectedWalk.status === 'IN_PROGRESS' && (
                       <button

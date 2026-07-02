@@ -199,24 +199,35 @@ export function AdminBilling() {
           {billingData && (
             <>
               {/* Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 <div className="bg-primary/10 rounded-xl p-4">
-                  <p className="text-sm text-gray-600">Gesamtanzahl</p>
+                  <p className="text-sm text-gray-600">Walks</p>
                   <p className="text-3xl font-bold text-dark mt-2">
                     {billingData.summary.totalRecords}
                   </p>
-                  <p className="text-xs text-gray-600 mt-1">Walks</p>
                 </div>
                 <div className="bg-accent/10 rounded-xl p-4">
-                  <p className="text-sm text-gray-600">Gesamtdauer</p>
+                  <p className="text-sm text-gray-600">Dauer</p>
                   <p className="text-3xl font-bold text-dark mt-2">
                     {Math.floor(billingData.summary.totalDuration / 60)}h {billingData.summary.totalDuration % 60}m
                   </p>
                 </div>
-                <div className="bg-success/10 rounded-xl p-4">
-                  <p className="text-sm text-gray-600">Gesamtbetrag</p>
+                <div className="bg-purple-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-600">Netto</p>
                   <p className="text-3xl font-bold text-dark mt-2">
-                    {billingData.summary.totalAmount.toFixed(2)} €
+                    {(billingData.summary.totalNet || 0).toFixed(2)} €
+                  </p>
+                </div>
+                <div className="bg-yellow-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-600">MwSt ({billingData.summary.taxRate || 19}%)</p>
+                  <p className="text-3xl font-bold text-dark mt-2">
+                    {(billingData.summary.totalTax || 0).toFixed(2)} €
+                  </p>
+                </div>
+                <div className="bg-success/10 rounded-xl p-4">
+                  <p className="text-sm text-gray-600">Brutto</p>
+                  <p className="text-3xl font-bold text-dark mt-2">
+                    {(billingData.summary.totalGross || billingData.summary.totalAmount).toFixed(2)} €
                   </p>
                 </div>
               </div>
@@ -243,7 +254,13 @@ export function AdminBilling() {
                           Stundensatz
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                          Betrag
+                          Netto
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                          MwSt
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                          Brutto
                         </th>
                       </tr>
                     </thead>
@@ -264,6 +281,12 @@ export function AdminBilling() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
                             {record.hourlyRate.toFixed(2)} €
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                            {(record.netAmount || (record.amount / 1.19)).toFixed(2)} €
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                            {(record.taxAmount || (record.amount - record.amount / 1.19)).toFixed(2)} €
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark text-right">
                             {record.amount.toFixed(2)} €

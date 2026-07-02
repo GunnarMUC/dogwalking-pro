@@ -1,41 +1,15 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma.js';
+import { ZodError } from 'zod';
+import { rateService } from '../services/rate.service.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
-import type { CreateRateRequest } from '@dogwalking/shared';
+import { createRateSchema } from '../schemas/billing.js';
 
 export const ratesRouter = Router();
-
-// All routes require authentication
 ratesRouter.use(authenticate);
 
-// Get all rates
 ratesRouter.get('/', async (req: AuthRequest, res) => {
   try {
-    const { dogId } = req.query;
-
-    const whereClause: any = {};
-    if (dogId) {
-      whereClause.dogId = dogId as string;
-    }
-
-    const rates = await prisma.rate.findMany({
-      where: whereClause,
-      include: {
-        dog: {
-          include: {
-            owner: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { effectiveFrom: 'desc' }
-    });
-
+    const rates = await rateService.list(req.query.dogId as string);
     res.json(rates);
   } catch (error) {
     console.error('Get rates error:', error);
@@ -43,86 +17,34 @@ ratesRouter.get('/', async (req: AuthRequest, res) => {
   }
 });
 
-// Create rate (admin only)
 ratesRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const data = req.body as CreateRateRequest;
-
-    const rate = await prisma.rate.create({
-      data: {
-        dogId: data.dogId,
-        hourlyRate: data.hourlyRate,
-        effectiveFrom: new Date(data.effectiveFrom)
-      },
-      include: {
-        dog: {
-          include: {
-            owner: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        }
-      }
-    });
-
+    const data = createRateSchema.parse(req.body);
+    const rate = await rateService.create(data);
     res.status(201).json(rate);
   } catch (error) {
-    console.error('Create rate error:', error);
-    res.status(500).json({ error: 'Failed to create rate' });
+    if (error instanceof ZodError) return res.status(400).json({ error: 'Validation failed', details: error.errors });
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Failed to create rate' });
   }
 });
 
-// Update rate (admin only)
 ratesRouter.patch('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
-    const { hourlyRate, effectiveFrom } = req.body;
-
-    const rate = await prisma.rate.update({
-      where: { id },
-      data: {
-        ...(hourlyRate !== undefined && { hourlyRate }),
-        ...(effectiveFrom && { effectiveFrom: new Date(effectiveFrom) })
-      },
-      include: {
-        dog: {
-          include: {
-            owner: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
-        }
-      }
-    });
-
+    const rate = await rateService.update(req.params.id, req.body);
     res.json(rate);
   } catch (error) {
-    console.error('Update rate error:', error);
-    res.status(500).json({ error: 'Failed to update rate' });
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Failed to update rate' });
   }
 });
 
-// Delete rate (admin only)
 ratesRouter.delete('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
-
-    await prisma.rate.delete({
-      where: { id }
-    });
-
-    res.json({ message: 'Rate deleted successfully' });
+    await rateService.delete(req.params.id);
+    res.json({ message: 'Rate deleted' });
   } catch (error) {
-    console.error('Delete rate error:', error);
-    res.status(500).json({ error: 'Failed to delete rate' });
+    const status = (error as any).status || 500;
+    res.status(status).json({ error: (error as Error).message || 'Failed to delete rate' });
   }
 });
-

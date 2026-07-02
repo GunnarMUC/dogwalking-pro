@@ -1,16 +1,16 @@
-// User roles
 export enum UserRole {
   ADMIN = 'ADMIN',
   OWNER = 'OWNER'
 }
 
-// Walk status
 export enum WalkStatus {
   SCHEDULED = 'SCHEDULED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
 }
+
+export type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
 
 // User types
 export interface User {
@@ -40,6 +40,80 @@ export interface Dog {
   emergencyContact?: string;
   photoUrl?: string;
   createdAt: Date;
+}
+
+export interface DogFilter {
+  ownerId?: string;
+  breed?: string;
+  searchText?: string;
+}
+
+// Walker Profile types
+export interface WalkerProfile {
+  id: string;
+  userId: string;
+  user?: User;
+  bio: string;
+  experienceYears: number;
+  hourlyRate: number;
+  serviceAreas: string[];
+  availability?: string[];
+  isAvailable: boolean;
+  certifications?: string[];
+  averageRating: number;
+  totalWalks: number;
+  latitude?: number;
+  longitude?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WalkerProfileFormData {
+  bio: string;
+  experienceYears: number;
+  hourlyRate: number;
+  serviceAreas: string[];
+  availability?: string[];
+  isAvailable: boolean;
+  certifications?: string[];
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface WalkerSearchFilters {
+  serviceArea?: string;
+  minRate?: number;
+  maxRate?: number;
+  minExperience?: number;
+  minRating?: number;
+  isAvailable?: boolean;
+  sortBy?: 'hourlyRate' | 'experienceYears' | 'averageRating' | 'totalWalks';
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+// Recurring Walk types
+export interface RecurringWalkPlan {
+  id: string;
+  dogId: string;
+  dog?: Dog;
+  ownerId: string;
+  owner?: User;
+  dayOfWeek: number;
+  time: string;
+  duration: number;
+  active: boolean;
+  createdAt: Date;
+}
+
+// Pagination
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // Invitation types
@@ -77,7 +151,7 @@ export interface Attendance {
   dogId: string;
   dog?: Dog;
   attended: boolean;
-  duration?: number; // in minutes
+  duration?: number;
   createdAt: Date;
 }
 
@@ -89,6 +163,28 @@ export interface Rate {
   hourlyRate: number;
   effectiveFrom: Date;
   createdAt: Date;
+}
+
+// Invoice types
+export interface InvoiceLineItem {
+  dogId: string;
+  dogName: string;
+  durationMinutes: number;
+  hourlyRate: number;
+  netAmount: number;
+  taxAmount: number;
+  grossAmount: number;
+}
+
+export interface Invoice {
+  invoiceNumber: string;
+  date: string;
+  lineItems: InvoiceLineItem[];
+  totalNet: number;
+  totalTax: number;
+  totalGross: number;
+  currency: string;
+  taxRate: number;
 }
 
 // API Request/Response types
@@ -142,8 +238,6 @@ export interface UpdateWalkRequest {
   dogIds?: string[];
   notes?: string;
   status?: WalkStatus;
-  startTime?: Date;
-  endTime?: Date;
 }
 
 export interface UpdateAttendanceRequest {
@@ -156,6 +250,19 @@ export interface CreateRateRequest {
   dogId: string;
   hourlyRate: number;
   effectiveFrom: Date;
+}
+
+export interface CreateWalkerProfileRequest {
+  userId: string;
+  bio: string;
+  experienceYears: number;
+  hourlyRate: number;
+  serviceAreas: string[];
+  availability?: string[];
+  isAvailable: boolean;
+  certifications?: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface BillingRecord {
@@ -175,3 +282,34 @@ export interface BillingReportRequest {
   ownerId?: string;
 }
 
+export interface BillingReportResponse {
+  records: BillingRecord[];
+  summary: {
+    totalRecords: number;
+    totalDuration: number;
+    totalAmount: number;
+    totalNet: number;
+    totalTax: number;
+    totalGross: number;
+    startDate: string;
+    endDate: string;
+    taxRate: number;
+  };
+}
+
+export interface WalkStats {
+  scheduled: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+  total: number;
+}
+
+export interface DashboardStats {
+  totalDogs: number;
+  totalOwners: number;
+  totalWalkers: number;
+  upcomingWalks: number;
+  activeWalks: number;
+  monthlyRevenue: number;
+}

@@ -6,6 +6,7 @@ import { AdminDogs } from './pages/admin/Dogs';
 import { AdminWalks } from './pages/admin/Walks';
 import { AdminInvitations } from './pages/admin/Invitations';
 import { AdminBilling } from './pages/admin/Billing';
+import { AdminWalkers } from './pages/admin/Walkers';
 import { AdminUsers } from './pages/admin/Users';
 import { OwnerDashboard } from './pages/owner/Dashboard';
 import { OwnerProfile } from './pages/owner/Profile';
@@ -79,6 +80,16 @@ const adminBillingRoute = createRoute({
   ),
 });
 
+const adminWalkersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/walkers',
+  component: () => (
+    <ProtectedRoute requiredRole={UserRole.ADMIN}>
+      <AdminWalkers />
+    </ProtectedRoute>
+  ),
+});
+
 const adminUsersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users',
@@ -139,6 +150,7 @@ const routeTree = rootRoute.addChildren([
   adminWalksRoute,
   adminInvitationsRoute,
   adminBillingRoute,
+  adminWalkersRoute,
   adminUsersRoute,
   ownerRoute,
   ownerProfileRoute,

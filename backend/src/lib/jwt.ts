@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+import { JWT_SECRET } from '../config/env.js';
 
 export interface JwtPayload {
   userId: string;

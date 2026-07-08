@@ -1,5 +1,8 @@
 # 🐕 DogWalking Community App — Unified Platform
 
+[![CI](https://github.com/GunnarMUC/dogwalking-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/GunnarMUC/dogwalking-pro/actions)
+
+
 **Professionelle Plattform für Hundebetreuung** — Dogwalker- und Besitzer-Portal mit Walker-Management, Terminverwaltung, Abrechnung und mehr.
 
 > Gebaut als moderne Full-Stack PWA mit React, Express, Prisma und TypeScript.

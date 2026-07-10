@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
-  }
+  },
+  "contributors": [
+    "Gunnar M\u00fcller"
+  ]
 }
-
